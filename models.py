@@ -17,8 +17,6 @@ from envi import SetEnv
 # https://hiddenbeginner.github.io/study-notes/contents/tutorials/2023-04-20_CartRacing-v2_DQN.html
 
 
-
-
 class DQN(nn.Module):
     def __init__(self, state_dim, action_dim, activation = F.relu):
         super(DQN, self).__init__()
@@ -30,23 +28,13 @@ class DQN(nn.Module):
                                 out_channels = 16,    # [N, 16, 20, 20]
                                 kernel_size = 8,
                                 stride = 8) 
-        # self.pool1 = nn.MaxPool2d(kernel_size = 2, stride =2)
         self.conv2 = nn.Conv2d(16, 32, 4, 2)          # [N, 16, 20, 20] -> [N, 32, 9, 9]
-        # self.pool2 = nn.MaxPool2d(kernel_size = 2, stride =2)
-
         self.in_features = 32 * 4 * 4        # 512
-
         self.fc1 = nn.Linear(self.in_features, 256)
         self.fc2 = nn.Linear(256, action_dim)
         self.activation = activation
 
-        # Hyperparameters
-        self.gamma = 0.99
-        self.lr = 0.00001
-        self.tau = 0.005
-        self.memory_capacity = 60000
-
-
+    
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
