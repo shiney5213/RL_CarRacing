@@ -1,33 +1,29 @@
-def train(q, q_target, memory, optimizer):
+import torch.nn.functional as F
+
+
+
+def train(q, q_target, memory, optimizer, gamma, batch_size):
     """
     nn update 함수(파라미터 update)
     optimizer: train함수를 여러번 부르기 때문에, 밖에서 지정한 후, 인자로 넘기는 것이 효율적
     """
 
-    GAMMA = 0.98
-    MINI_BATCH = 32
-
-    
 
     for i in range(10):
         # 1. batch size 만큼의 batch size 가져오기 
         # s, s_prime: (32, 4, 84, 84)
         # a, r, done_mask : (32, 1)
-        s, a, r, s_prime, done_mask = memory.sample(MINI_BATCH)
+        s, a, r, s_prime, done_mask = memory.sample(batch_size)
         
         # 2. DQN class안의 forware()함수 실행
-        q_out = q(s)
+        q_out = q(s)          # [32, 5]
+
 
 
         # 3. loss 구하기
         # 3.1 prediction 값
-        # 실제로 취한 action의 Q값 구하기
-        # mini_batch: (32, 2)의 vector -> 1차원: 2shape에 해당하는 값 => a: 0 or 1값 -> q_out에서 a에 해당하는 index의 값을 가져오기
-        # ex) q_out : [[0.4, 0.6], [0.3, 0.7], [0.9, 0.1]]
-        # a = [ 0, 1, 0]
-        # q_a = [0.4, 0.7. 0.9] 
-        q_a = q_out.gather(1, a)  # action에 해당하는 q값을 가져와서 loss function을 계산하기 위함
-
+        # 실제로 취한 action의 Q값 구하기 -> loss function 계산하기 위해
+        q_a = q_out.gather(1, a)  
 
         # 3.2. target 구하기  
         # DQN 슬라이드 15p
@@ -37,6 +33,7 @@ def train(q, q_target, memory, optimizer):
 
         # 3.3. loss 구하기
         loss = F.mse_loss(q_a, target)
+        
 
         # 4. train
         # 4.1. optimizer의 gradient 없애기, 이번에 update한 내용이 다음에 남아있지 않도록 하기
