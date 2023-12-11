@@ -5,6 +5,10 @@ import pygame
 import matplotlib.pyplot as plt
 import torch
 
+def check_dir(dir_path):
+    if not os.path.isdir(dir_path):
+            os.makedirs(dir_path)
+
 def save_model(model, n_epi, t, score, optimizer, dir_path, filename, model_type):
 
     score = round(score, 3)
@@ -17,6 +21,7 @@ def save_model(model, n_epi, t, score, optimizer, dir_path, filename, model_type
         'optimizer': optimizer.state_dict()
         }
 
+    
     torch.save(state, checkpoint_path)
 
 def save_returngraph(return_list, dir_path, filename, n_episode, learning_rate):
@@ -26,7 +31,7 @@ def save_returngraph(return_list, dir_path, filename, n_episode, learning_rate):
 
     plt.savefig(os.path.join(dir_path, f'{filename}_{n_episode}.png'), format='png', dpi=300)
 
-def plot_durations(episode_durations, dir_path, filename, n_episode, show_result=False):
+def plot_durations(episode_durations, dir_path, filename, n_episode, show_result=True):
     """
     지난 100개 에피소드의 평균(공식 평가에서 사용 된 수치)에 따른 에피소드의 지속을 도표화
     """
@@ -47,19 +52,12 @@ def plot_durations(episode_durations, dir_path, filename, n_episode, show_result
         plt.plot(means.numpy())
 
     plt.savefig(os.path.join(dir_path, f'{filename}_{n_episode}_durations.png'), format='png', dpi=300)
-    # plt.pause(0.001)  # 도표가 업데이트되도록 잠시 멈춤
-    # if is_ipython:
-    #     if not show_result:
-    #         display.display(plt.gcf())
-    #         display.clear_output(wait=True)
-    #     else:
-    #         display.display(plt.gcf())
+    
 
 
+def image_save(img, dir_path, name):
 
-def image_save(img, path, name):
-
-    print(img.shape)
+    check_dir(dir_path)
 
     if img.shape[0] < 96:
     
@@ -72,7 +70,7 @@ def image_save(img, path, name):
         img = cv2.resize(img, (width, height))
     # print(img_resize)
 
-    img_path = os.path.join(path, name)
+    img_path = os.path.join(dir_path, name)
     cv2.imwrite(img_path, img)
 
 
