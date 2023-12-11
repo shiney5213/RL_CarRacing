@@ -42,18 +42,20 @@ def main(device):
     # buffer_size = 1,000,000 
 
     ### hyperparameter in test
-    n_episode = 500
+    n_episode = 1000
     # buffer_limit = 100
     # buffer_save = 50
     # n_episode = 3
     print_interval = 20
 
     # model save
-    dir_path = './result/1.DQN'
+    root = './result'
+    dir = f'2.DQN_e{n_episode}_s{1000}'
+    dir_path = os.path.join(root, dir)
     if not os.path.isdir(dir_path):
         os.makedirs(dir_path)
     
-    filename = '1. DQN'
+    filename = f'1. DQN_{n_episode}_{1000}'
 
     # random seed 설정
     random_seed = 42
