@@ -6,6 +6,11 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from itertools import count
+import math
+import time
+import datetime
+import logging
+import json
 
 
 
@@ -18,7 +23,7 @@ from utils import save_returngraph, plot_durations, save_model
 
 def main(device):
     
-    # hyperparameter in class
+    ### hyperparameter in class
     buffer_limit = 50000
     buffer_save = 2000
     learning_rate = 0.0005
@@ -26,23 +31,25 @@ def main(device):
     buffer_limit = 50000        # size of replay buffer
     batch_size = 32
     n_episode = 3000
+    
     print_interval = 20
 
-    # hyperparameter in paper
+    ### hyperparameter in paper
     epsilon_init = 1.0
     epsilon_min = 0.1
-    batch_size = 32
-    learing_rate = 0.00025
-    buffer_size = 1,000,000 
+    # batch_size = 32
+    # learing_rate = 0.00025
+    # buffer_size = 1,000,000 
 
-    # hyperparameter in test
-    buffer_limit = 100
-    buffer_save = 50
-    n_episode = 3
-    print_interval = 1
+    ### hyperparameter in test
+    n_episode = 500
+    # buffer_limit = 100
+    # buffer_save = 50
+    # n_episode = 3
+    print_interval = 20
 
     # model save
-    dir_path = './result/DQN'
+    dir_path = './result/1.DQN'
     if not os.path.isdir(dir_path):
         os.makedirs(dir_path)
     
@@ -58,19 +65,29 @@ def main(device):
     np.random.seed(random_seed)
     # random.seed(random_seed)
     
+    
 
     ## 1. env setting
+    # gym.envs.register(
+    #     id='CarRacing-v2',
+    #     max_episode_steps=100,
+    # )
     # env = gym.make("CarRacing-v2", render_mode = 'human', continuous = False)
     env = gym.make("CarRacing-v2", render_mode = 'state_pixels', continuous = False)
+    
+    env_spec = gym.envs.registry['CarRacing-v2'].to_json()
+    max_episode_steps = json.loads(env_spec)['max_episode_steps']   # 1000
 
     # env setting                 
     env = SetEnv(env)
 
     # env reset
     s, _  = env.reset()        # s.shape = (4, 84, 84)
-    print("The shape of an observation: ", s.shape)
+    # print("The shape of an observation: ", s.shape)
     state_dim = s.shape
     action_dim = env.action_space.n
+    # print('step', json.dump(gym.envs.registry['CarRacing-v2']gym.envs.registry['CarRacing-v2'].to_json())['max_episode_step'])
+    
 
     ## 2. model
     q = DQN(state_dim[0], action_dim).to(device)
@@ -85,12 +102,12 @@ def main(device):
     optimizer = optim.RMSprop(q.parameters(), learning_rate)
 
     ## 5. episode 반복
-
     score = 0.0
     epsilon = epsilon_init
     return_list = []
     episode_durations = []
     for n_epi in range(n_episode):
+        time_start = time.time()
         # 1) epsilon decay
         epsilon_decay = (epsilon_init - epsilon_min) / 1e6
         epsilon -= epsilon_decay
@@ -102,8 +119,11 @@ def main(device):
         # 3) transition buffer에 put
         done = False
         score = 0.0
-        # while not done:        
-        for t in count() :
+        t = 0
+        while not done:        
+        # for t in range(0, max_episode_steps) :
+            t += 1
+            
             # transition 만들기: (s, a, r, s', done_mask)
             a = q.sample_action(torch.from_numpy(s).float().to(device), epsilon)
             s_prime, r, terminated, truncated, info = env.step(a)
@@ -112,7 +132,8 @@ def main(device):
             r = r/100.0      
             
             # done : 0 -> terminal
-            done = (terminated or truncated)   
+            done = (terminated or truncated) 
+            # done = terminated  
             done_mask = 0.0 if done else 1.0   
 
             transition = (s, a, r, s_prime, done_mask)
@@ -123,31 +144,52 @@ def main(device):
             s = s_prime
 
             score  += r
+            
+            # print("t =>", t, "terminated", terminated, "truncated", truncated)
 
             if terminated:
                 save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
+                
 
             if done:
+                time_end = time.time()
+                sec = time_end - time_start
+                times = str(datetime.timedelta(seconds=sec)).split(".")[0]
                 return_list.append(score)
                 episode_durations.append(t + 1)
-                # save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
+                # save_model(q, n_epi, t, score, optimizer, dir_path, f'{filename}_terminated', 'q')
                 break
-
+                
+ 
+        # time_end = time.time()
+        # sec = time_end - time_start
+        # times = str(datetime.timedelta(seconds=sec)).split(".")[0]
+        # return_list.append(score)
+        # episode_durations.append(t + 1)
+        
+            
         # 4) transition 쌓이면 학습
         if memory.size() > buffer_save:
             train(q, q_target, memory, optimizer, gamma, batch_size)
 
         # 5) q_target model update
-        if n_epi%print_interval==0 and n_epi!=0:
+        if n_epi % print_interval==0 and n_epi!=0:
             q_target.load_state_dict(q.state_dict())
 
-            # 6) log print
-            print("n_episode :{}, score : {:.1f}, n_buffer : {}, eps : {:.1f}%".format(
-                                                            n_epi, score/print_interval, memory.size(), epsilon*100))
-            score = 0.0
+        # 6) log print
+        if n_epi % print_interval==0 and n_epi!=0:
+            print("n_episode :{}, score : {:.3f}, n_buffer : {}, eps : {:.1f}%, step : {}, time : {}".format(
+                                                            n_epi, score/print_interval, memory.size(), epsilon*100, t , times)) 
+            
+        # 7) model save
+        if score >= 0:
+            save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
+            
+        score = 0.0
 
     save_returngraph(return_list, dir_path, filename, n_episode, learning_rate)
     plot_durations(episode_durations, dir_path, filename, n_episode, show_result=True)
+    print('RL end')
     env.close()
 
 
