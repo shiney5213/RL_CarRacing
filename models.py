@@ -18,9 +18,10 @@ from envi import SetEnv
 
 
 class DQN(nn.Module):
-    def __init__(self, state_dim, action_dim, activation = F.relu):
+    def __init__(self, state_dim, action_dim, random_seed):
         super(DQN, self).__init__()
-
+        
+        np.random.seed(random_seed)
         # model
         # input : (N, 4, 84, 84)
         # output: (N, C_out, H_out, W_out)
@@ -32,7 +33,6 @@ class DQN(nn.Module):
         self.in_features = 32 * 4 * 4        # 512
         self.fc1 = nn.Linear(self.in_features, 256)
         self.fc2 = nn.Linear(256, action_dim)
-        self.activation = activation
 
     
     def forward(self, x):
@@ -44,8 +44,8 @@ class DQN(nn.Module):
 
         return x
 
-    def sample_action(self, obs, epsilon):
-        out = self.forward(obs)    # torch.Size([1, 5])
+    def sample_action(self, obs, epsilon, is_continuous):
+        out = self.forward(obs)    # torch.Size([1, 5]) / torch.Size([1, 3])
         random_value = random.random()
 
         # if random_value < epsilon :
@@ -55,7 +55,17 @@ class DQN(nn.Module):
         #     return [ out[0].argmax().item(), out[1].argmax().item(), out[2].argmax().item(), out[3].argmax().item(),out[4].argmax().item(),]
 
         if random_value < epsilon :
-            return random.randint(0,4) 
+            if is_continuous:
+                random_action = np.random.rand(3)   # 0~1사이 난수 
+                random_sign = np.random.choice([-1, 1])
+                random_action = [v * random_sign if i == 0 else v for i, v in enumerate(random_action)]
+                # return np.array(random_action).argmax().item()
+                return np.array(random_action)
+            else:
+                return random.randint(0,4) 
 
         else:
-            return  out.argmax().item()
+            if is_continuous:
+               pass
+            else:
+                return  out.argmax().item()
