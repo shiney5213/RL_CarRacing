@@ -1,0 +1,26 @@
+cuda:0 is available
+n_episode :20, score : -0.041, n_buffer : 4998, eps : 100.0%, step : 238, time : 0:00:06
+n_episode :40, score : -0.039, n_buffer : 9758, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :60, score : -0.034, n_buffer : 14518, eps : 100.0%, step : 238, time : 0:00:06
+n_episode :80, score : -0.029, n_buffer : 19278, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :100, score : -0.009, n_buffer : 24038, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :120, score : -0.016, n_buffer : 28798, eps : 100.0%, step : 238, time : 0:00:06
+n_episode :140, score : -0.033, n_buffer : 33558, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :160, score : -0.015, n_buffer : 38318, eps : 100.0%, step : 238, time : 0:00:06
+n_episode :180, score : -0.037, n_buffer : 43078, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :200, score : -0.034, n_buffer : 47838, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :220, score : -0.003, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :240, score : -0.023, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:06
+n_episode :260, score : -0.021, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :280, score : -0.012, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:06
+n_episode :300, score : -0.012, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :320, score : -0.016, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :340, score : -0.026, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:06
+n_episode :360, score : -0.028, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :380, score : -0.014, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :400, score : -0.012, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :420, score : -0.027, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :440, score : -0.020, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :460, score : -0.016, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+n_episode :480, score : -0.030, n_buffer : 50000, eps : 100.0%, step : 238, time : 0:00:07
+RL end

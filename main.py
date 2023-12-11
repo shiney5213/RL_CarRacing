@@ -29,15 +29,11 @@ def main(device):
     # learing_rate = 0.00025
     # buffer_size = 1,000,000 
 
-    # model save
-    root = './result'
-    dir = f'2.DQN_e{n_episode}_s{1000}'
-    dir_path = os.path.join(root, dir)
-    check_dir(dir_path)
-    filename = f'1. DQN_{n_episode}_{1000}'
 
     # hyperparameter and save setting
-    test_mode = True
+    test_mode = False
+    is_continuous = False
+    # is_continuous = False
     learning_rate = 0.0005
     gamma = 0.98  
     batch_size = 32
@@ -55,14 +51,18 @@ def main(device):
         max_episode_steps = 100
     else:
         ### hyperparameter in class
-        n_episode = 3000
-        buffer_limit = 50000
+        n_episode = 10000
         buffer_save = 2000
         buffer_limit = 50000        # size of replay buffer
         print_interval = 20
         max_episode_steps = 1000
 
-
+    # model save
+    root = './result'
+    dir = f'4.DQN_preprocessing_e{n_episode}_s{1000}'
+    dir_path = os.path.join(root, dir)
+    check_dir(dir_path)
+    filename = f'4. DQN_preprocessing_{n_episode}_{1000}'
 
     # random seed 설정
     random_seed = 42
@@ -75,9 +75,12 @@ def main(device):
     # random.seed(random_seed)
     
     
+    print('start')
+    print('is_continuous:', is_continuous)
+    print('n_episode:', n_episode)
+    print('max_episode_steps:', 1000)
     ## 1. env setting
-    is_continuous = True
-    # is_continuous = False
+    
     env = gym.make("CarRacing-v2", render_mode = 'state_pixels', continuous = is_continuous)
     
     env_spec = gym.envs.registry['CarRacing-v2'].to_json()
@@ -104,7 +107,7 @@ def main(device):
     q_target.load_state_dict(q.state_dict())
 
     ## 3. buffer
-    memory = ReplayBuffer(state_dim, (1, ), buffer_limit, device, random_seed)
+    memory = ReplayBuffer(state_dim, (1, ), buffer_limit, device, random_seed, is_continuous)
 
     ## 4. optimizer
     optimizer = optim.RMSprop(q.parameters(), learning_rate)
@@ -130,8 +133,8 @@ def main(device):
         done = False
         score = 0.0
         t = 0
-        while not done:        
-        # for t in range(0, max_episode_steps) :
+        # while not done:        
+        for t in range(0, max_episode_steps) :
             t += 1
             
             # transition 만들기: (s, a, r, s', done_mask)
@@ -142,8 +145,8 @@ def main(device):
             r = r/100.0      
             
             # done : 0 -> terminal
-            done = (terminated or truncated) 
-            # done = terminated  
+            # done = (terminated or truncated) 
+            done = terminated  
             done_mask = 0.0 if done else 1.0   
 
             transition = (s, a, r, s_prime, done_mask)
@@ -161,20 +164,20 @@ def main(device):
                 save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
                 
             if done:
-                time_end = time.time()
-                sec = time_end - time_start
-                times = str(datetime.timedelta(seconds=sec)).split(".")[0]
-                return_list.append(score)
-                episode_durations.append(t + 1)
-                # save_model(q, n_epi, t, score, optimizer, dir_path, f'{filename}_terminated', 'q')
+                # time_end = time.time()
+                # sec = time_end - time_start
+                # times = str(datetime.timedelta(seconds=sec)).split(".")[0]
+                # return_list.append(score)
+                # episode_durations.append(t + 1)
+                save_model(q, n_epi, t, score, optimizer, dir_path, f'{filename}_terminated', 'q')
                 break
                 
  
-        # time_end = time.time()
-        # sec = time_end - time_start
-        # times = str(datetime.timedelta(seconds=sec)).split(".")[0]
-        # return_list.append(score)
-        # episode_durations.append(t + 1)
+        time_end = time.time()
+        sec = time_end - time_start
+        times = str(datetime.timedelta(seconds=sec)).split(".")[0]
+        return_list.append(score)
+        episode_durations.append(t + 1)
         
             
         # 4) transition 쌓이면 학습
