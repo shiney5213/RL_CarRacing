@@ -18,42 +18,51 @@ from envi import SetEnv
 from models import DQN
 from buffer import ReplayBuffer
 from train import train
-from utils import save_returngraph, plot_durations, save_model
+from utils import save_returngraph, plot_durations, save_model, check_dir
 
 
 def main(device):
     
-    ### hyperparameter in class
-    buffer_limit = 50000
-    buffer_save = 2000
-    learning_rate = 0.0005
-    gamma = 0.98
-    buffer_limit = 50000        # size of replay buffer
-    batch_size = 32
-    n_episode = 3000
     
-    print_interval = 20
-
     ### hyperparameter in paper
-    epsilon_init = 1.0
-    epsilon_min = 0.1
     # batch_size = 32
     # learing_rate = 0.00025
     # buffer_size = 1,000,000 
 
-    ### hyperparameter in test
-    n_episode = 500
-    # buffer_limit = 100
-    # buffer_save = 50
-    # n_episode = 3
-    print_interval = 20
 
     # model save
     dir_path = './result/1.DQN'
-    if not os.path.isdir(dir_path):
-        os.makedirs(dir_path)
-    
+    check_dir(dir_path)
     filename = '1. DQN'
+
+
+    # hyperparameter and save setting
+    test_mode = True
+    learning_rate = 0.0005
+    gamma = 0.98  
+    batch_size = 32
+    epsilon_init = 1.0
+    epsilon_min = 0.1
+  
+
+    if test_mode:
+        ### hyperparameter in test
+        n_episode = 500
+        buffer_limit = 100
+        buffer_save = 50
+        n_episode = 10
+        print_interval = 1
+        max_episode_steps = 100
+    else:
+        ### hyperparameter in class
+        n_episode = 3000
+        buffer_limit = 50000
+        buffer_save = 2000
+        buffer_limit = 50000        # size of replay buffer
+        print_interval = 20
+        max_episode_steps = 1000
+
+
 
     # random seed 설정
     random_seed = 42
@@ -66,37 +75,36 @@ def main(device):
     # random.seed(random_seed)
     
     
-
     ## 1. env setting
-    # gym.envs.register(
-    #     id='CarRacing-v2',
-    #     max_episode_steps=100,
-    # )
-    # env = gym.make("CarRacing-v2", render_mode = 'human', continuous = False)
-    env = gym.make("CarRacing-v2", render_mode = 'state_pixels', continuous = False)
+    is_continuous = True
+    # is_continuous = False
+    env = gym.make("CarRacing-v2", render_mode = 'state_pixels', continuous = is_continuous)
     
     env_spec = gym.envs.registry['CarRacing-v2'].to_json()
-    max_episode_steps = json.loads(env_spec)['max_episode_steps']   # 1000
+    # max_episode_steps = json.loads(env_spec)['max_episode_steps']   # 1000
 
     # env setting                 
-    env = SetEnv(env)
+    env = SetEnv(env, is_continuous)
 
     # env reset
     s, _  = env.reset()        # s.shape = (4, 84, 84)
-    # print("The shape of an observation: ", s.shape)
     state_dim = s.shape
-    action_dim = env.action_space.n
-    # print('step', json.dump(gym.envs.registry['CarRacing-v2']gym.envs.registry['CarRacing-v2'].to_json())['max_episode_step'])
+    if is_continuous:
+        action_dim  = env.action_space.shape[0]  # Box([-1.  0.  0.], 1.0, (3,), float32)
+    else:
+        action_dim = env.action_space.n          # Discrete(5)
+    print("The shape of an observation: ", s.shape)
+    print('the shape of action_space:', action_dim)  
     
 
     ## 2. model
-    q = DQN(state_dim[0], action_dim).to(device)
+    q = DQN(state_dim[0], action_dim, random_seed).to(device)
     # print(summary(q, (4, 84, 84)))
-    q_target = DQN(state_dim[0], action_dim).to(device)
+    q_target = DQN(state_dim[0], action_dim, random_seed).to(device)
     q_target.load_state_dict(q.state_dict())
 
     ## 3. buffer
-    memory = ReplayBuffer(state_dim, (1, ), buffer_limit, device)
+    memory = ReplayBuffer(state_dim, (1, ), buffer_limit, device, random_seed)
 
     ## 4. optimizer
     optimizer = optim.RMSprop(q.parameters(), learning_rate)
@@ -106,7 +114,9 @@ def main(device):
     epsilon = epsilon_init
     return_list = []
     episode_durations = []
-    for n_epi in range(n_episode):
+    for i, n_epi in enumerate(range(n_episode)):
+        print('episode:', i)
+
         time_start = time.time()
         # 1) epsilon decay
         epsilon_decay = (epsilon_init - epsilon_min) / 1e6
@@ -125,7 +135,7 @@ def main(device):
             t += 1
             
             # transition 만들기: (s, a, r, s', done_mask)
-            a = q.sample_action(torch.from_numpy(s).float().to(device), epsilon)
+            a = q.sample_action(torch.from_numpy(s).float().to(device), epsilon, is_continuous)
             s_prime, r, terminated, truncated, info = env.step(a)
 
             # r: 작은 수로 만들기
@@ -150,7 +160,6 @@ def main(device):
             if terminated:
                 save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
                 
-
             if done:
                 time_end = time.time()
                 sec = time_end - time_start
@@ -170,7 +179,7 @@ def main(device):
             
         # 4) transition 쌓이면 학습
         if memory.size() > buffer_save:
-            train(q, q_target, memory, optimizer, gamma, batch_size)
+            train(q, q_target, memory, optimizer, gamma, batch_size, is_continuous, device)
 
         # 5) q_target model update
         if n_epi % print_interval==0 and n_epi!=0:
@@ -183,12 +192,14 @@ def main(device):
             
         # 7) model save
         if score >= 0:
-            save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
+            if not test_mode:
+                save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
             
         score = 0.0
 
-    save_returngraph(return_list, dir_path, filename, n_episode, learning_rate)
-    plot_durations(episode_durations, dir_path, filename, n_episode, show_result=True)
+    if not test_mode:
+        save_returngraph(return_list, dir_path, filename, n_episode, learning_rate)
+        plot_durations(episode_durations, dir_path, filename, n_episode, show_result=True)
     print('RL end')
     env.close()
 
