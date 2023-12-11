@@ -7,7 +7,7 @@ from utils import image_save, detect_car
 
 
 env_spec = gym.envs.registry['CarRacing-v2'].to_json()
-# print(env_spec)
+print(env_spec)
 
 DIR_PATH = 'result/1.random'
 N_TIME = 1
