@@ -53,7 +53,7 @@ class SetEnv(gym.Wrapper):
         return self.stacked_frame, info
 
     def step(self, action):
-
+        
         # 각 state마다 frame 1개 제공 -> 자동차의 이동 방향 알 수 없음.
         # history frame 4개 쌓아서 제공
         reward = 0
