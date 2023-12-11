@@ -29,12 +29,12 @@ def main(device):
     # learing_rate = 0.00025
     # buffer_size = 1,000,000 
 
-
     # model save
-    dir_path = './result/1.DQN'
+    root = './result'
+    dir = f'2.DQN_e{n_episode}_s{1000}'
+    dir_path = os.path.join(root, dir)
     check_dir(dir_path)
-    filename = '1. DQN'
-
+    filename = f'1. DQN_{n_episode}_{1000}'
 
     # hyperparameter and save setting
     test_mode = True
