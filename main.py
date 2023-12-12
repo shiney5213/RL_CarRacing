@@ -12,8 +12,8 @@ import datetime
 import logging
 import json
 
-from envi import SetEnv, ActionSpaceEnv,CarRacingActionSpace
-from models import DQN
+from envi import DescreteEnv, ContinuousEnv
+from models import DQN, ResNet18DQN
 from buffer import ReplayBuffer
 from train import train
 from utils import save_returngraph, plot_durations, save_model, check_dir
@@ -21,29 +21,32 @@ from utils import save_returngraph, plot_durations, save_model, check_dir
 
 def main():
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print('divice', device)
         
     ### hyperparameter in paper
     # batch_size = 32
     # learing_rate = 0.00025
     # buffer_size = 1,000,000 
+    # epsilon_cycle = 1e6
 
 
     # hyperparameter and save setting
     test_mode = False
-    is_continuous = True
-    action_space_mapping= {
-                        0: (0, 0, 0),  # 정지
-                        1: (1, 1, 0),  # 왼쪽으로 많이 틀면서 이동
-                        2: (0.5, 1, 0),  # 왼쪽으로 조금 틀면서 이동
-                        3: (-1, 1, 0),    # 오른쪽으로 많이 틀면서 이동
-                        4:  (0.5, 1, 0),  # 오른쪽으로 조금 틀면서 이동
-                    }
+    is_continuous = False
+    is_preprocess = False
+    is_resnet = False
+    if is_resnet :
+        stack_frames = 3
+    else:
+        stack_frames = 4
+    
 
     learning_rate = 0.0005
     gamma = 0.98  
     batch_size = 32
     epsilon_init = 1.0
     epsilon_min = 0.1
+    epsilon_cycle = 2000
   
 
     if test_mode:
@@ -61,15 +64,15 @@ def main():
         n_episode = 2000
         buffer_save = 2000
         buffer_limit = 50000        # size of replay buffer
-        print_interval = 1
+        print_interval = 20
         max_episode_steps = 1000
 
     # model save
     root = './result'
-    dir = f'6.DQN_continuous_e{n_episode}_s{1000}'
+    dir = f'2.DQN_e{n_episode}_s{1000}'
     dir_path = os.path.join(root, dir)
     check_dir(dir_path)
-    filename = f'6. DQN_continuous_{n_episode}_{1000}'
+    filename = f'2. DQN_{n_episode}_{1000}'
 
     # random seed 설정
     random_seed = 42
@@ -89,30 +92,30 @@ def main():
     
     env = gym.make("CarRacing-v2", render_mode = 'state_pixels', continuous = is_continuous)
     
-    # env setting                 
-    # env = SetEnv(env, is_continuous)
-    # env = CarRacingActionSpace(env)
-    env = ActionSpaceEnv(env, is_continuous)
-    print('action_space', env.action_space)
-
+    # env setting   
+    if is_continuous:    
+        env = ContinuousEnv(env, stack_frames = stack_frames, is_preprocess = is_preprocess)
+        action_space = env.action_space
+    else:      
+        env = DescreteEnv(env, stack_frames = stack_frames,  is_preprocess = is_preprocess)
+        # action_dim = env.action_space.n  
+    
     # env reset
     s, _  = env.reset()        # s.shape = (4, 84, 84)
     state_dim = s.shape
-    # if is_continuous:
-    #     action_dim  = env.action_space.shape[0]  # Box([-1.  0.  0.], 1.0, (3,), float32)
-    # else:
-    #     action_dim = env.action_space.n          # Discrete(5)
-    action_dim = env.action_space.n          # Discrete(5)
-
+    action_dim = env.action_space.n 
     print("The shape of an observation: ", s.shape)
     print('the shape of action_space:', action_dim)  
-    
-    # raise ValueError
 
+    
     ## 2. model
-    q = DQN(state_dim[0], action_dim, random_seed).to(device)
-    # print(summary(q, (4, 84, 84)))
-    q_target = DQN(state_dim[0], action_dim, random_seed).to(device)
+    if is_resnet:
+        q = ResNet18DQN(state_dim[0], action_dim, random_seed).to(device)
+        q_target = ResNet18DQN(state_dim[0], action_dim, random_seed).to(device)
+    else:
+        q = DQN(state_dim[0], action_dim, random_seed).to(device)
+        q_target = DQN(state_dim[0], action_dim, random_seed).to(device)
+    print(summary(q, (stack_frames, 84, 84)))
     q_target.load_state_dict(q.state_dict())
 
     ## 3. buffer
@@ -131,8 +134,11 @@ def main():
 
         time_start = time.time()
         # 1) epsilon decay
-        epsilon_decay = (epsilon_init - epsilon_min) / 1e6
-        epsilon -= epsilon_decay
+        # epsilon_decay = (epsilon_init - epsilon_min) / epsilon_cycle
+        # epsilon -= epsilon_decay
+        epsilon = max(0.01, 0.08 - 0.01*(n_epi/200)) #Linear annealing from 8% to 1%
+
+        print('epsilon', epsilon)
 
         # 2) env 초기화
         s, _  = env.reset()        # s.shape = (4, 84, 84)
@@ -147,16 +153,25 @@ def main():
             t += 1
             
             # transition 만들기: (s, a, r, s', done_mask)
+            if is_continuous:
+                action_space_mapping= {
+                        0: (0, 0, 0),  # 정지
+                        1: (1, 1, 0),  # 왼쪽으로 많이 틀면서 이동
+                        2: (0.5, 1, 0),  # 왼쪽으로 조금 틀면서 이동
+                        3: (-1, 1, 0),    # 오른쪽으로 많이 틀면서 이동
+                        4:  (0.5, 1, 0),  # 오른쪽으로 조금 틀면서 이동
+                    } 
+            else:
+                action_space_mapping = None
             a = q.sample_action(torch.from_numpy(s).float().to(device), epsilon, is_continuous, action_space_mapping)
-            # print('a', a)
             s_prime, r, terminated, truncated, info = env.step(a)
 
             # r: 작은 수로 만들기
             r = r/100.0      
             
             # done : 0 -> terminal
-            # done = (terminated or truncated) 
-            done = terminated  
+            done = (terminated or truncated) 
+            # done = terminated  
             done_mask = 0.0 if done else 1.0   
 
             transition = (s, a, r, s_prime, done_mask)
