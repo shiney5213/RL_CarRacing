@@ -14,7 +14,7 @@ import json
 
 
 
-from envi import SetEnv
+from envi import SetEnv, ActionSpaceEnv
 from models import DQN
 from buffer import ReplayBuffer
 from train import train
@@ -22,8 +22,7 @@ from utils import save_returngraph, plot_durations, save_model, check_dir
 
 
 def main(device):
-    
-    
+        
     ### hyperparameter in paper
     # batch_size = 32
     # learing_rate = 0.00025
@@ -33,7 +32,7 @@ def main(device):
     # hyperparameter and save setting
     test_mode = False
     is_continuous = False
-    # is_continuous = False
+
     learning_rate = 0.0005
     gamma = 0.98  
     batch_size = 32
@@ -49,20 +48,22 @@ def main(device):
         n_episode = 10
         print_interval = 1
         max_episode_steps = 100
+        epsilon_init = 0.5
     else:
         ### hyperparameter in class
-        n_episode = 10000
+        # n_episode = 10000
+        n_episode = 2000
         buffer_save = 2000
         buffer_limit = 50000        # size of replay buffer
-        print_interval = 20
+        print_interval = 1
         max_episode_steps = 1000
 
     # model save
     root = './result'
-    dir = f'4.DQN_preprocessing_e{n_episode}_s{1000}'
+    dir = f'5.DQN_actionspace_e{n_episode}_s{1000}'
     dir_path = os.path.join(root, dir)
     check_dir(dir_path)
-    filename = f'4. DQN_preprocessing_{n_episode}_{1000}'
+    filename = f'5. DQN_action_space_{n_episode}_{1000}'
 
     # random seed 설정
     random_seed = 42
@@ -83,11 +84,13 @@ def main(device):
     
     env = gym.make("CarRacing-v2", render_mode = 'state_pixels', continuous = is_continuous)
     
-    env_spec = gym.envs.registry['CarRacing-v2'].to_json()
-    # max_episode_steps = json.loads(env_spec)['max_episode_steps']   # 1000
 
     # env setting                 
-    env = SetEnv(env, is_continuous)
+    # env = SetEnv(env, is_continuous)
+    env = ActionSpaceEnv(env, is_continuous)
+    print('action_space', env.action_space)
+
+    
 
     # env reset
     s, _  = env.reset()        # s.shape = (4, 84, 84)
@@ -118,7 +121,7 @@ def main(device):
     return_list = []
     episode_durations = []
     for i, n_epi in enumerate(range(n_episode)):
-        print('episode:', i)
+        # print('episode:', i)
 
         time_start = time.time()
         # 1) epsilon decay
