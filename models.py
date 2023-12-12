@@ -13,13 +13,15 @@ from envi import SetEnv
 
 # https://github.com/wpiszlogin/driver_critic/blob/main/base_solution.py참고
 # 모델 변경(DDpG -> DQN), framework 변경(tensorflow -> torch)
-# https://gymnasium.farama.org/environments/box2d/car_racing/
+# 공식 문서 : https://gymnasium.farama.org/environments/box2d/car_racing/
 # https://hiddenbeginner.github.io/study-notes/contents/tutorials/2023-04-20_CartRacing-v2_DQN.html
-
+# https://github.com/Jueun-Park/gym-autonmscar/tree/master
+# 평가 지표: https://davinci-ai.tistory.com/33
 
 class DQN(nn.Module):
     def __init__(self, state_dim, action_dim, random_seed):
         super(DQN, self).__init__()
+        self.action_dim = action_dim
         
         np.random.seed(random_seed)
         # model
@@ -62,10 +64,12 @@ class DQN(nn.Module):
                 # return np.array(random_action).argmax().item()
                 return np.array(random_action)
             else:
-                return random.randint(0,4) 
+                return random.randint(0,self.action_dim-1) 
 
         else:
             if is_continuous:
-               pass
+                print('out', out)
+                raise ValueError
+               
             else:
                 return  out.argmax().item()
