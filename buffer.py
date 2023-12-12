@@ -44,11 +44,8 @@ class ReplayBuffer():
         s_lst = np.array(s_lst)
         s_prime_lst = np.array(s_prime_lst)
         if self.is_continuous:
-            try:
-                a_lst = np.array(a_lst)
-            except:
-                print('a_lst', a_lst)
-                raise ValueError
+            a_lst = np.array(a_lst)
+            
         # dtype : 숫자형 변환
         return torch.tensor(s_lst, dtype=torch.float).to(self.device),\
                torch.tensor(a_lst).to(self.device), \
