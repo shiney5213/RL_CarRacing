@@ -39,11 +39,14 @@ def preprocess(img):
 
 class CarRacingActionSpace(gym.ActionWrapper):
     # https://brunch.co.kr/@kakao-it/144
-        
-    def __init__(self, env):
-        super(CarRacingActionSpace, self).__init__(env)
-        self.action_space = spaces.Discrete(11)
-        self.mapping = {
+    # mapping = {
+    #                 0: (0, 0, 0),  # 정지
+    #                 1: (1, 1, 0),  # 왼쪽으로 많이 틀면서 이동
+    #                 2: (0.5, 1, 0),  # 왼쪽으로 조금 틀면서 이동
+    #                 3: (-1, 1, 0),    # 오른쪽으로 많이 틀면서 이동
+    #                 4:  (0.5, 1, 0),  # 오른쪽으로 조금 틀면서 이동
+    #             }
+    mapping = {
             0: (0, 0,0),
             1: (1, 1, 0),
             2: (1, -1, 0),
@@ -57,13 +60,20 @@ class CarRacingActionSpace(gym.ActionWrapper):
             10:  (-1, -1, 0),
         }
 
+    def __init__(self, env):
+        super(CarRacingActionSpace, self).__init__(env)
+        # self.action_space = spaces.Discrete(11)
+        self.action_space = spaces.Discrete(5)
+
+
     def _action(self, action):
         return self.mapping.get(action)
         
     def _reverse_action(self, action):
         for k in self.mapping.keys():
-            if self.mapping[k] == action :
+            if (self.mapping[k] == action) :
                 return self.mapping[k]
+        return 0
 
     
     
@@ -122,6 +132,8 @@ class SetEnv(gym.Wrapper):
         self.stacked_frame = np.concatenate( (self.stacked_frame[1:], s[np.newaxis]), axis = 0)  # (4, 84, 84)
         return self.stacked_frame, reward, terminated, truncated, info
 
+
+
 class ActionSpaceEnv(gym.Wrapper):
     """
     env를 학습할 수 있도록 초기화
@@ -130,33 +142,33 @@ class ActionSpaceEnv(gym.Wrapper):
     - skip_frames : frame skipping technuque
     -
     """
-    def __init__(self, env, is_continuous, skip_frames = 4, stack_frames = 4, initial_no_op= 50,  **kwargs):
-        super(ActionSpaceEnv, self).__init__(env, **kwargs)
-        self.inital_no_op = initial_no_op
-        self.skip_frames = skip_frames
-        self.stack_frames= stack_frames
-        self.is_continuous = is_continuous
-        # self.mapping = {
-        #     0: (0, 0,0),
-        #     1: (1, 1, 0),
-        #     2: (1, -1, 0),
-        #     3:  (0.5, 1, 0),
-        #     4: (0.5, -1, 0),
-        #     5: (0, 1, 0),
-        #     6: (0, -1, 0),
-        #     7:  (-0.5, 1, 0),
-        #     8:  (-0.5, -1, 0),
-        #     9:  (-1, 1, 0),
-        #     10:  (-1, -1, 0),
-        # }
-        self.mapping = {
+    # mapping = {
+    #         0: (0, 0,0),
+    #         1: (1, 1, 0),
+    #         2: (1, -1, 0),
+    #         3:  (0.5, 1, 0),
+    #         4: (0.5, -1, 0),
+    #         5: (0, 1, 0),
+    #         6: (0, -1, 0),
+    #         7:  (-0.5, 1, 0),
+    #         8:  (-0.5, -1, 0),
+    #         9:  (-1, 1, 0),
+    #         10:  (-1, -1, 0),
+    #     }
+    mapping = {
                         0: (0, 0, 0),  # 정지
                         1: (1, 1, 0),  # 왼쪽으로 많이 틀면서 이동
                         2: (0.5, 1, 0),  # 왼쪽으로 조금 틀면서 이동
                         3: (-1, 1, 0),    # 오른쪽으로 많이 틀면서 이동
                         4:  (0.5, 1, 0),  # 오른쪽으로 조금 틀면서 이동
                     }
-        self.action_space = spaces.Discrete(len(self.mapping.keys()))
+    def __init__(self, env, is_continuous, skip_frames = 4, stack_frames = 4, initial_no_op= 50,  **kwargs):
+        super(ActionSpaceEnv, self).__init__(env, **kwargs)
+        self.inital_no_op = initial_no_op
+        self.skip_frames = skip_frames
+        self.stack_frames= stack_frames
+        self.is_continuous = is_continuous
+        self.action_space = spaces.Discrete(5)
 
 
     def _action(self, action):
@@ -164,8 +176,9 @@ class ActionSpaceEnv(gym.Wrapper):
         
     def _reverse_action(self, action):
         for k in self.mapping.keys():
-            if self.mapping[k] == action :
+            if (self.mapping[k] == action) :
                 return self.mapping[k]
+        return 0
 
     
     def reset(self, seed = 42, options = None):
