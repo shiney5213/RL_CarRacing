@@ -12,16 +12,15 @@ import datetime
 import logging
 import json
 
-
-
-from envi import SetEnv, ActionSpaceEnv
+from envi import SetEnv, ActionSpaceEnv,CarRacingActionSpace
 from models import DQN
 from buffer import ReplayBuffer
 from train import train
 from utils import save_returngraph, plot_durations, save_model, check_dir
 
 
-def main(device):
+def main():
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         
     ### hyperparameter in paper
     # batch_size = 32
@@ -31,7 +30,14 @@ def main(device):
 
     # hyperparameter and save setting
     test_mode = False
-    is_continuous = False
+    is_continuous = True
+    action_space_mapping= {
+                        0: (0, 0, 0),  # 정지
+                        1: (1, 1, 0),  # 왼쪽으로 많이 틀면서 이동
+                        2: (0.5, 1, 0),  # 왼쪽으로 조금 틀면서 이동
+                        3: (-1, 1, 0),    # 오른쪽으로 많이 틀면서 이동
+                        4:  (0.5, 1, 0),  # 오른쪽으로 조금 틀면서 이동
+                    }
 
     learning_rate = 0.0005
     gamma = 0.98  
@@ -60,10 +66,10 @@ def main(device):
 
     # model save
     root = './result'
-    dir = f'5.DQN_actionspace_e{n_episode}_s{1000}'
+    dir = f'6.DQN_continuous_e{n_episode}_s{1000}'
     dir_path = os.path.join(root, dir)
     check_dir(dir_path)
-    filename = f'5. DQN_action_space_{n_episode}_{1000}'
+    filename = f'6. DQN_continuous_{n_episode}_{1000}'
 
     # random seed 설정
     random_seed = 42
@@ -75,33 +81,33 @@ def main(device):
     np.random.seed(random_seed)
     # random.seed(random_seed)
     
-    
     print('start')
+    print('test_mode:', test_mode)
     print('is_continuous:', is_continuous)
     print('n_episode:', n_episode)
-    print('max_episode_steps:', 1000)
     ## 1. env setting
     
     env = gym.make("CarRacing-v2", render_mode = 'state_pixels', continuous = is_continuous)
     
-
     # env setting                 
     # env = SetEnv(env, is_continuous)
+    # env = CarRacingActionSpace(env)
     env = ActionSpaceEnv(env, is_continuous)
     print('action_space', env.action_space)
-
-    
 
     # env reset
     s, _  = env.reset()        # s.shape = (4, 84, 84)
     state_dim = s.shape
-    if is_continuous:
-        action_dim  = env.action_space.shape[0]  # Box([-1.  0.  0.], 1.0, (3,), float32)
-    else:
-        action_dim = env.action_space.n          # Discrete(5)
+    # if is_continuous:
+    #     action_dim  = env.action_space.shape[0]  # Box([-1.  0.  0.], 1.0, (3,), float32)
+    # else:
+    #     action_dim = env.action_space.n          # Discrete(5)
+    action_dim = env.action_space.n          # Discrete(5)
+
     print("The shape of an observation: ", s.shape)
     print('the shape of action_space:', action_dim)  
     
+    # raise ValueError
 
     ## 2. model
     q = DQN(state_dim[0], action_dim, random_seed).to(device)
@@ -141,7 +147,8 @@ def main(device):
             t += 1
             
             # transition 만들기: (s, a, r, s', done_mask)
-            a = q.sample_action(torch.from_numpy(s).float().to(device), epsilon, is_continuous)
+            a = q.sample_action(torch.from_numpy(s).float().to(device), epsilon, is_continuous, action_space_mapping)
+            # print('a', a)
             s_prime, r, terminated, truncated, info = env.step(a)
 
             # r: 작은 수로 만들기
@@ -212,7 +219,4 @@ def main(device):
 
 
 if __name__ == "__main__":
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    print(f'{device} is available')
-    # device = 'cpu'
-    main(device)
+    main()
