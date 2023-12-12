@@ -38,8 +38,7 @@ def train(q, q_target, memory, optimizer, gamma, batch_size, is_continuous, devi
             # continuout : a.shape = [32, 1, 3]  a[0] = tensor([[-0.6242,  0.1169,  0.9398]], device='cuda:0', dtype=torch.float64)
 
             # 3.1 prediction 값
-            # action space 값 중 어떤 값을  actiond으로 취하는지 모르겠음.
-            # descrete 처럼 action space 3개 중 제일 큰 값인 action을 1개만 취했다고 가정
+            # descrete 처럼 action space 5개 중 제일 큰 값인 action을 1개만 취했다고 가정
             new_a = []
             for i in a:
                 new_a.append(i.argmax().item())
