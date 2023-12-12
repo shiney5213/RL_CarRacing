@@ -30,7 +30,6 @@ class ReplayBuffer():
 
         for transition in mini_batch:
             s, a, r, s_prime, done_mask = transition     # ndarray, int, float, ndarray, float
-            
             # s, s_prime : [4, 84, 84] array/ a, r: scala value
             s_lst.append(s)
             # a_lst.append([a])
@@ -45,7 +44,11 @@ class ReplayBuffer():
         s_lst = np.array(s_lst)
         s_prime_lst = np.array(s_prime_lst)
         if self.is_continuous:
-            a_lst = np.array(a_lst)
+            try:
+                a_lst = np.array(a_lst)
+            except:
+                print('a_lst', a_lst)
+                raise ValueError
         # dtype : 숫자형 변환
         return torch.tensor(s_lst, dtype=torch.float).to(self.device),\
                torch.tensor(a_lst).to(self.device), \
