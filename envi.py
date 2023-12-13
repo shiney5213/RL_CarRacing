@@ -21,16 +21,16 @@ class DescreteEnv(gym.Wrapper):
         self.inital_no_op = initial_no_op
         self.skip_frames = skip_frames
         self.stack_frames= stack_frames
-        self.is_preprocess = self.is_preprocess
+        self.is_preprocess = is_preprocess
     
     def reset(self, seed = 42, options = None):
         s,  info = self.env.reset()
 
         # 초반 50번의 step:  pygame window에서 zoom하는 과정 -> 아무것도 하지 않도록 action = 0
         
-        init_action = 0
-        for i in range(self.inital_no_op):
-            s, r, terminated, truncated, info = self.env.step(init_action)
+        # init_action = 0
+        # for i in range(self.inital_no_op):
+        #     s, r, terminated, truncated, info = self.env.step(init_action)
         
         if self.is_preprocess:
             s = preprocess(s)
@@ -116,9 +116,9 @@ class ContinuousEnv(gym.Wrapper):
         s,  info = self.env.reset()
 
         # 초반 50번의 step:  pygame window에서 zoom하는 과정 -> 아무것도 하지 않도록 action = 0
-        init_action = (0, 0, 0)
-        for i in range(self.inital_no_op):
-            s, r, terminated, truncated, info = self.env.step(init_action)
+        # init_action = (0, 0, 0)
+        # for i in range(self.inital_no_op):
+        #     s, r, terminated, truncated, info = self.env.step(init_action)
             
         if self.is_preprocess:
             s = preprocess(s)
