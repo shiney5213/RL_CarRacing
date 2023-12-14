@@ -2,7 +2,7 @@
 Reinforcement Learning으로 CarRacing을 진행합니다
 
 ---
-- model path: ./models/CarRacing_DQN_8.907.pt
+- [model path](https://github.com/shiney5213/RL_CarRacing/blob/main/models/CarRacing_DQN_8.907.pt)
 - Do you want to test?
     - test.py
 - Do you want to train:
