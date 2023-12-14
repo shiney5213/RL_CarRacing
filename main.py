@@ -6,14 +6,11 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from itertools import count
-import math
 import time
 import datetime
-import logging
-import json
 
 from envi import DescreteEnv, ContinuousEnv
-from models import DQN, ResNet18DQN
+from models import DQN, ResNet18DQN, DeepQNetwork
 from buffer import ReplayBuffer
 from train import train
 from utils import save_returngraph, plot_durations, save_model, check_dir
@@ -24,7 +21,6 @@ def main():
     print('divice', device)
         
     ### hyperparameter in paper
-    # batch_size = 32
     # learing_rate = 0.00025
     # buffer_size = 1,000,000 
     # epsilon_cycle = 1e6
@@ -33,8 +29,9 @@ def main():
     # hyperparameter and save setting
     test_mode = False
     is_continuous = False
-    is_preprocess = False
+    is_preprocess = True
     is_resnet = False
+    is_simpleDQN = True
     if is_resnet :
         stack_frames = 3
     else:
@@ -43,15 +40,13 @@ def main():
 
     learning_rate = 0.0005
     gamma = 0.98  
-    batch_size = 32
-    epsilon_init = 1.0
-    epsilon_min = 0.1
-    epsilon_cycle = 2000
-  
+    batch_size = 32    
+    epsilon_init = 0.8
+    epsilon_min = 0.01
 
     if test_mode:
         ### hyperparameter in test
-        n_episode = 500
+        n_episode = 10
         buffer_limit = 100
         buffer_save = 50
         n_episode = 10
@@ -60,7 +55,6 @@ def main():
         epsilon_init = 0.5
     else:
         ### hyperparameter in class
-        # n_episode = 10000
         n_episode = 2000
         buffer_save = 2000
         buffer_limit = 50000        # size of replay buffer
@@ -69,10 +63,10 @@ def main():
 
     # model save
     root = './result'
-    dir = f'2.DQN_e{n_episode}_s{1000}'
+    dir = f'DQN'
     dir_path = os.path.join(root, dir)
     check_dir(dir_path)
-    filename = f'2. DQN_{n_episode}_{1000}'
+    filename = f'DQN_e{n_episode}'
 
     # random seed 설정
     random_seed = 42
@@ -82,23 +76,20 @@ def main():
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     np.random.seed(random_seed)
-    # random.seed(random_seed)
     
     print('start')
     print('test_mode:', test_mode)
     print('is_continuous:', is_continuous)
     print('n_episode:', n_episode)
+
     ## 1. env setting
-    
     env = gym.make("CarRacing-v2", render_mode = 'state_pixels', continuous = is_continuous)
     
     # env setting   
     if is_continuous:    
         env = ContinuousEnv(env, stack_frames = stack_frames, is_preprocess = is_preprocess)
-        action_space = env.action_space
     else:      
         env = DescreteEnv(env, stack_frames = stack_frames,  is_preprocess = is_preprocess)
-        # action_dim = env.action_space.n  
     
     # env reset
     s, _  = env.reset()        # s.shape = (4, 84, 84)
@@ -113,9 +104,13 @@ def main():
         q = ResNet18DQN(state_dim[0], action_dim, random_seed).to(device)
         q_target = ResNet18DQN(state_dim[0], action_dim, random_seed).to(device)
     else:
-        q = DQN(state_dim[0], action_dim, random_seed).to(device)
-        q_target = DQN(state_dim[0], action_dim, random_seed).to(device)
-    print(summary(q, (stack_frames, 84, 84)))
+        if is_simpleDQN:
+            q = DQN(state_dim[0], action_dim, random_seed).to(device)
+            q_target = DQN(state_dim[0], action_dim, random_seed).to(device)
+        else:
+            q = DeepQNetwork(state_dim[0], action_dim, random_seed).to(device)
+            q_target = DeepQNetwork(state_dim[0], action_dim, random_seed).to(device)
+
     q_target.load_state_dict(q.state_dict())
 
     ## 3. buffer
@@ -130,15 +125,11 @@ def main():
     return_list = []
     episode_durations = []
     for i, n_epi in enumerate(range(n_episode)):
-        # print('episode:', i)
 
         time_start = time.time()
         # 1) epsilon decay
-        # epsilon_decay = (epsilon_init - epsilon_min) / epsilon_cycle
-        # epsilon -= epsilon_decay
-        epsilon = max(0.01, 0.08 - 0.01*(n_epi/200)) #Linear annealing from 8% to 1%
+        epsilon = max((epsilon_min), epsilon_init - 0.01*(n_epi/200)) #Linear annealing from 8% to 1%
 
-        print('epsilon', epsilon)
 
         # 2) env 초기화
         s, _  = env.reset()        # s.shape = (4, 84, 84)
@@ -148,19 +139,19 @@ def main():
         done = False
         score = 0.0
         t = 0
-        # while not done:        
-        for t in range(0, max_episode_steps) :
+        while not done:        
+        # for t in range(0, max_episode_steps) :
             t += 1
             
             # transition 만들기: (s, a, r, s', done_mask)
             if is_continuous:
-                action_space_mapping= {
-                        0: (0, 0, 0),  # 정지
-                        1: (1, 1, 0),  # 왼쪽으로 많이 틀면서 이동
-                        2: (0.5, 1, 0),  # 왼쪽으로 조금 틀면서 이동
-                        3: (-1, 1, 0),    # 오른쪽으로 많이 틀면서 이동
-                        4:  (0.5, 1, 0),  # 오른쪽으로 조금 틀면서 이동
-                    } 
+                action_space_mapping = {
+                    0: (0, 0, 0),  # 정지
+                    1: (1, 0, 0),  # 왼쪽으로  steer
+                    2: (-1, 0, 0),  # 오른쪽으로 steer
+                    3: (0, 1, 0),    # 가속
+                    4:  (0, 0, 1),  # 감속
+                }
             else:
                 action_space_mapping = None
             a = q.sample_action(torch.from_numpy(s).float().to(device), epsilon, is_continuous, action_space_mapping)
@@ -171,7 +162,6 @@ def main():
             
             # done : 0 -> terminal
             done = (terminated or truncated) 
-            # done = terminated  
             done_mask = 0.0 if done else 1.0   
 
             transition = (s, a, r, s_prime, done_mask)
@@ -183,21 +173,12 @@ def main():
 
             score  += r
             
-            # print("t =>", t, "terminated", terminated, "truncated", truncated)
-
-            if terminated:
+            if terminated and score > 5:
                 save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
                 
             if done:
-                # time_end = time.time()
-                # sec = time_end - time_start
-                # times = str(datetime.timedelta(seconds=sec)).split(".")[0]
-                # return_list.append(score)
-                # episode_durations.append(t + 1)
-                save_model(q, n_epi, t, score, optimizer, dir_path, f'{filename}_terminated', 'q')
                 break
                 
- 
         time_end = time.time()
         sec = time_end - time_start
         times = str(datetime.timedelta(seconds=sec)).split(".")[0]
@@ -218,10 +199,6 @@ def main():
             print("n_episode :{}, score : {:.3f}, n_buffer : {}, eps : {:.1f}%, step : {}, time : {}".format(
                                                             n_epi, score/print_interval, memory.size(), epsilon*100, t , times)) 
             
-        # 7) model save
-        if score >= 0:
-            if not test_mode:
-                save_model(q, n_epi, t, score, optimizer, dir_path, filename, 'q')
             
         score = 0.0
 
