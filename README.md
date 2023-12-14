@@ -7,6 +7,12 @@ Reinforcement Learning으로 CarRacing을 진행합니다
     - test.py
 - Do you want to train:
     - main.py
+- result
+
+<img src = "https://github.com/shiney5213/RL_CarRacing/assets/54365104/8c7b9498-c932-476d-8fcb-ad622206b692" >
+
+- (동영상이 안보이면 클릭해주세요!)
+
 ---
 
 ## CarRacing 
@@ -50,15 +56,12 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 |batch_size|32|
 |Buffer size|50000|
 
-### 5. train result
+### 5. result
 <p align = "center" width = 100%>
 <img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000.png" width="50%" >
 <img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000_2000_durations.png" width="50%> 
 </p>
 
-### 6. retults
-<img src = "https://github.com/shiney5213/RL_CarRacing/assets/54365104/8c7b9498-c932-476d-8fcb-ad622206b692" >
-(동영상이 안보이면 클릭해주세요!)
 
 ---
 Reference
