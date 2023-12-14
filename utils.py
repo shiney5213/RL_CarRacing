@@ -12,7 +12,7 @@ def check_dir(dir_path):
 def save_model(model, n_epi, t, score, optimizer, dir_path, filename, model_type):
 
     score = round(score, 3)
-    checkpoint_path = os.path.join(dir_path, f'{filename}_{model_type}_{t}_{score}.pt')
+    checkpoint_path = os.path.join(dir_path, f'{filename}_{model_type}_{n_epi}_{score}.pt')
     state =  {
         'episode': n_epi,
         'score': score,

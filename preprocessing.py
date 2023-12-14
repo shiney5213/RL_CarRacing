@@ -2,6 +2,13 @@ import cv2
 import numpy as np
 from  utils import image_save
 
+def basicpreprocess(img, is_save = False):
+    # image size : 84 * 84
+    croped = img[:84, 6:90]
+    gray  = gray_scale(croped)
+    return gray
+
+
 def preprocess(img ,is_save = False):
     # preprocessing in DQN paper
     # img -> grascale -> [1, 84, 84] -> normalization

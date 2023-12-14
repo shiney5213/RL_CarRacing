@@ -20,6 +20,7 @@ from torchvision.models import resnet18, ResNet18_Weights
 # tensorflow CarRacing: https://github.com/andywu0913/OpenAI-GYM-CarRacing-DQN/tree/master
 # resnet18 model : https://towardsdatascience.com/applying-a-deep-q-network-for-openais-car-racing-game-a642daf58fc9
 
+# models.py
 class ResNet18DQN(nn.Module):
     # https://towardsdatascience.com/applying-a-deep-q-network-for-openais-car-racing-game-a642daf58fc9
     def __init__(self, state_dim, action_dim, random_seed):
@@ -27,18 +28,9 @@ class ResNet18DQN(nn.Module):
         self.action_dim = action_dim
         
         np.random.seed(random_seed)
-        # model
-        # resnet input: [b, 3, 84, 84]
-        # resnet output : [b, 5]
+        
         
         self.resnet18_pretrained =resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
-        # resnet의 첫 layer
-        # self.resnet18_pretrained.layer1._modules['0']._modules['conv1'] = nn.Conv2d(in_channels = state_dim,       # [N, 4, 84, 84 ]
-        #                                                                 out_channels = state_dim,    # [N, 16, 20, 20]
-        #                                                                 kernel_size = 4,
-        #                                                                 stride = 1,
-        #                                                                 padding = 7) 
-        # resnet의 마지막 layer
         self.in_features = self.resnet18_pretrained.fc.in_features
         self.resnet18_pretrained.fc = nn.Linear(self.in_features, 512)
         self.fc1 = nn.Linear(512, 256)
@@ -96,6 +88,65 @@ class DQN(nn.Module):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = x.view((-1, self.in_features))
+        x = self.fc1(x)
+        x = self.fc2(x)
+
+        return x
+
+    def sample_action(self, obs, epsilon, is_continuous, action_space_mapping= None):
+        out = self.forward(obs)    # torch.Size([1, 5]) / torch.Size([1, 3])
+        random_value = random.random()
+
+        if random_value < epsilon :
+            # ramdon action
+            if is_continuous:
+                random_num = random.randint(0, self.action_dim-1)
+                return action_space_mapping[random_num]
+            else:
+                return random.randint(0, self.action_dim-1) 
+
+        else:
+            if is_continuous:
+                action_num = out.argmax().item()
+                return action_space_mapping[action_num]
+                  
+            else:
+                return  out.argmax().item()
+
+
+class DeepQNetwork(nn.Module):
+    def __init__(self, state_dim, action_dim, random_seed):
+        super(DeepQNetwork, self).__init__()
+        self.action_dim = action_dim
+        np.random.seed(random_seed)
+
+        self.conv1 = nn.Sequential(nn.Conv2d(4, 32, kernel_size= 8, stride = 4), nn.ReLU(inplace = True))
+        self.conv2 = nn.Sequential(nn.Conv2d(32, 64, kernel_size= 4, stride = 2), nn.ReLU(inplace = True))
+        self.conv3 = nn.Sequential(nn.Conv2d(64, 64, kernel_size= 3, stride = 1), nn.ReLU(inplace = True))
+
+        self.fc1 = nn.Sequential(nn.Linear(7 * 7 * 64, 512), nn.ReLU(inplace = True))
+        self.fc2 = nn.Linear(512, 5)
+        # self.conv1 = nn.Sequential(nn.Conv2d(4, 32, kernel_size= 8, stride = 4), nn.ReLU(inplace = True))
+        # self.conv2 = nn.Sequential(nn.Conv2d(32, 64, kernel_size= 4, stride = 2), nn.ReLU(inplace = True))
+        # self.conv3 = nn.Sequential(nn.Conv2d(64, 64, kernel_size= 3, stride = 1), nn.ReLU(inplace = True))
+
+        # self.fc1 = nn.Sequential(nn.Linear(7 * 7 * 64 , 512), nn.ReLU(inplace = True))
+        # self.fc2 = nn.Linear(512, 5)
+        self._create_weights()
+
+
+    def _create_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                nn.init.uniform_(m.weight, -0.01, 0.01)
+                nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        in_feature =  64 * 7 *  7   # 6272
+        x = x.view(-1, in_feature)
         x = self.fc1(x)
         x = self.fc2(x)
 
