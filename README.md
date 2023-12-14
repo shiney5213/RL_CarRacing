@@ -44,8 +44,8 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 ### 3. Algorithm : DQN
 - CNN 기반의 모델 사용
 <figure class="half">
- <a href="link"><img src = "./image/DQN.png" width="200" height="150"></a>
- <a href="link"><img src = "./image/Q_net.png" width="200" height="150"></a>
+ <a href="link"><img src = "./image/DQN.png" width="300" height="200"></a>
+ <a href="link"><img src = "./image/Q_net.png" width="300" height="200"></a>
  </figure>
 
 ### 4. Hyperprarmeter setting
@@ -57,10 +57,10 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 |Buffer size|50000|
 
 ### 5. result
-<p align = "center" width = 100%>
-<img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000.png" width="50%" >
-<img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000_2000_durations.png" width="50%> 
-</p>
+<figure class="half">
+ <a href="link"><img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000.png" width="300" height="200"></a>
+ <a href="link"><img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000_2000_durations.png" width="300" height="200"></a>
+ </figure>
 
 
 ---
