@@ -53,7 +53,7 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 <img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000.png" width="300" height="200"><img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000_2000_durations.png" width="300" height="200">
 
 ### 6. retults
-<img src = "https://github.com/shiney5213/RL_CarRacing/issues/1#issue-2041427287" >
+<img src = "https://github.com/shiney5213/RL_CarRacing/assets/54365104/8c7b9498-c932-476d-8fcb-ad622206b692" >
 
 
 ---
