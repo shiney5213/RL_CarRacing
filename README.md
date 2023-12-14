@@ -5,7 +5,7 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 - [model download](https://github.com/shiney5213/RL_CarRacing/blob/main/models/CarRacing_DQN_8.907.pt)
 - Do you want to test?
     - test.py
-- Do you want to train:
+- Do you want to train?
     - main.py
 
 <img src = "https://github.com/shiney5213/RL_CarRacing/assets/54365104/0a7cffe9-993d-411e-97be-74e28e43020b">
