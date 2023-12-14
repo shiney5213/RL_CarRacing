@@ -7,7 +7,6 @@ Reinforcement Learning으로 CarRacing을 진행합니다
     - test.py
 - Do you want to train:
     - main.py
-- result
 
 <img src = "https://github.com/shiney5213/RL_CarRacing/assets/54365104/0a7cffe9-993d-411e-97be-74e28e43020b">
 
@@ -20,8 +19,7 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 - Goal 
     - 1000 steps 안에 자동차가 모든 트랙을 지나가는 것
 - action_space 
-    -  Discrete(5) 
-    -   [do nothing, steer left, steer right, gas, brake]
+    -  Discrete(5) :  [do nothing, steer left, steer right, gas, brake]
 -  observation Space : 
     - Box(0, 255, (96, 96, 3), uint8)
     - 96x96 RGB image
@@ -32,8 +30,7 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 
 ### 2. data 전처리
 - state : (96, 96, 3) image -> (4, 84, 84) image
--  img -> crop -> background -> grascale -> blur -> canny -> normalize
-- 4 stack frame : 이동 방향 알기 위해
+-  img -> crop -> background -> grascale -> blur -> canny -> normalize -> 4 stack frame
 
 |img| crop|background|grascale|blur|canny |
 |:---:|:---:|:---:|:---:|:---:|:---:|
