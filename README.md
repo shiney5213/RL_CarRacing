@@ -7,9 +7,9 @@ Reinforcement Learning으로 CarRacing을 진행합니다
     - test.py
 - Do you want to train:
     - main.py
-- result(동영상이 안보이면 클릭해주세요!)
+- result
 
-![train](https://github.com/shiney5213/RL_CarRacing/assets/54365104/0a7cffe9-993d-411e-97be-74e28e43020b
+<img src = "https://github.com/shiney5213/RL_CarRacing/assets/54365104/0a7cffe9-993d-411e-97be-74e28e43020b">
 
 ---
 
