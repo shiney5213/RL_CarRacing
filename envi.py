@@ -3,7 +3,7 @@ from gymnasium import spaces
 import numpy as np
 import cv2
 
-from preprocessing import preprocess
+from preprocessing import preprocess, basicpreprocess
 from utils import image_save
 
 
@@ -27,13 +27,15 @@ class DescreteEnv(gym.Wrapper):
         s,  info = self.env.reset()
 
         # 초반 50번의 step:  pygame window에서 zoom하는 과정 -> 아무것도 하지 않도록 action = 0
-        
-        # init_action = 0
-        # for i in range(self.inital_no_op):
-        #     s, r, terminated, truncated, info = self.env.step(init_action)
+        init_action = 0
+        for i in range(self.inital_no_op):
+            s, r, terminated, truncated, info = self.env.step(init_action)
         
         if self.is_preprocess:
             s = preprocess(s)
+        else:
+            s = basicpreprocess(s)
+
 
         
         # 초기 observation : 같은 s를 4번 쌓기 -> [4, 84, 84]
@@ -58,6 +60,8 @@ class DescreteEnv(gym.Wrapper):
 
         if self.is_preprocess:
             s = preprocess(s)   # [84, 84]
+        else:
+            s = basicpreprocess(s)
 
         # self.stacked_frame의 끝에 s넣기
         self.stacked_frame = np.concatenate( (self.stacked_frame[1:], s[np.newaxis]), axis = 0)  # (4, 84, 84)
@@ -69,30 +73,14 @@ class ContinuousEnv(gym.Wrapper):
     """
     - 원래 action space가 continuous한 상태의 env
     - but continuous한 action space를 descrete한 상태 5가지 변경한 env
-    - stacked_frames: 4개 stack으로 쌓기
-    - skip_frames : frame skipping technuque
-
     """
-    # mapping = {
-    #         0: (0, 0,0),
-    #         1: (1, 1, 0),
-    #         2: (1, -1, 0),
-    #         3:  (0.5, 1, 0),
-    #         4: (0.5, -1, 0),
-    #         5: (0, 1, 0),
-    #         6: (0, -1, 0),
-    #         7:  (-0.5, 1, 0),
-    #         8:  (-0.5, -1, 0),
-    #         9:  (-1, 1, 0),
-    #         10:  (-1, -1, 0),
-    #     }
     mapping = {
-                        0: (0, 0, 0),  # 정지
-                        1: (1, 1, 0),  # 왼쪽으로 많이 틀면서 이동
-                        2: (0.5, 1, 0),  # 왼쪽으로 조금 틀면서 이동
-                        3: (-1, 1, 0),    # 오른쪽으로 많이 틀면서 이동
-                        4:  (0.5, 1, 0),  # 오른쪽으로 조금 틀면서 이동
-                    }
+                    0: (0, 0, 0),  # 정지
+                    1: (1, 0, 0),  # 왼쪽으로  steer
+                    2: (-1, 0, 0),  # 오른쪽으로 steer
+                    3: (0, 1, 0),    # 가속
+                    4:  (0, 0, 1),  # 감속
+                }
     def __init__(self, env, stack_frames = 4, is_preprocess = True, skip_frames = 4,  initial_no_op= 50,  **kwargs):
         super(ContinuousEnv, self).__init__(env, **kwargs)
         self.inital_no_op = initial_no_op
@@ -116,12 +104,16 @@ class ContinuousEnv(gym.Wrapper):
         s,  info = self.env.reset()
 
         # 초반 50번의 step:  pygame window에서 zoom하는 과정 -> 아무것도 하지 않도록 action = 0
-        # init_action = (0, 0, 0)
-        # for i in range(self.inital_no_op):
-        #     s, r, terminated, truncated, info = self.env.step(init_action)
+        init_action = (0, 0, 0)
+        for i in range(self.inital_no_op):
+            s, r, terminated, truncated, info = self.env.step(init_action)
             
         if self.is_preprocess:
             s = preprocess(s)
+        else :
+            s = basicpreprocess(s)
+
+            
 
         # 초기 observation : 같은 s를 4번 쌓기 -> [4, 84, 84]
         self.stacked_frame = np.tile(A = s,
@@ -145,6 +137,9 @@ class ContinuousEnv(gym.Wrapper):
 
         if self.is_preprocess:
             s = preprocess(s )# [84, 84]
+        else:
+            s = basicpreprocess(s)
+
 
         # self.stacked_frame의 끝에 s넣기
         self.stacked_frame = np.concatenate( (self.stacked_frame[1:], s[np.newaxis]), axis = 0)  # (4, 84, 84)
@@ -157,27 +152,13 @@ class ContinuousEnv(gym.Wrapper):
 
 class CarRacingActionSpace(gym.ActionWrapper):
     # https://brunch.co.kr/@kakao-it/144
-    # mapping = {
-    #                 0: (0, 0, 0),  # 정지
-    #                 1: (1, 1, 0),  # 왼쪽으로 많이 틀면서 이동
-    #                 2: (0.5, 1, 0),  # 왼쪽으로 조금 틀면서 이동
-    #                 3: (-1, 1, 0),    # 오른쪽으로 많이 틀면서 이동
-    #                 4:  (0.5, 1, 0),  # 오른쪽으로 조금 틀면서 이동
-    #             }
     mapping = {
-            0: (0, 0,0),
-            1: (1, 1, 0),
-            2: (1, -1, 0),
-            3:  (0.5, 1, 0),
-            4: (0.5, -1, 0),
-            5: (0, 1, 0),
-            6: (0, -1, 0),
-            7:  (-0.5, 1, 0),
-            8:  (-0.5, -1, 0),
-            9:  (-1, 1, 0),
-            10:  (-1, -1, 0),
-        }
-
+                    0: (0, 0, 0),  # 정지
+                    1: (1, 0, 0),  # 왼쪽으로  steer
+                    2: (-1, 0, 0),  # 오른쪽으로 steer
+                    3: (0, 1, 0),    # 가속
+                    4:  (0, 0, 1),  # 감속
+                }
     def __init__(self, env):
         super(CarRacingActionSpace, self).__init__(env)
         # self.action_space = spaces.Discrete(11)
