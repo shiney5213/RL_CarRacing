@@ -37,9 +37,10 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 
 ### 3. Algorithm : DQN
 - CNN 기반의 모델 사용
-
-<img src = "./image/DQN.png" width="200" height="150">
-<img src = "./image/Q_net.png" width="200" height="150">
+<figure class="half">
+ <a href="link"><img src = "./image/DQN.png" width="200" height="150"></a>
+ <a href="link"><img src = "./image/Q_net.png" width="200" height="150"></a>
+ </figure>
 
 ### 4. Hyperprarmeter setting
 |hyperparameter|value|
@@ -50,11 +51,14 @@ Reinforcement Learning으로 CarRacing을 진행합니다
 |Buffer size|50000|
 
 ### 5. train result
-<img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000.png" width="300" height="200"><img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000_2000_durations.png" width="300" height="200">
+<figure class="half">
+<a href="link"><img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000.png" width="300" height="200"></a>
+<a href="link"><img src = "./image/results/9.DQN_dqn_descrete_e2000_e1000_2000_durations.png" width="300" height="200"></a>
+</figure>
 
 ### 6. retults
 <img src = "https://github.com/shiney5213/RL_CarRacing/assets/54365104/8c7b9498-c932-476d-8fcb-ad622206b692" >
-
+(동영상이 안보이면 클릭해주세요!)
 
 ---
 Reference
