@@ -9,8 +9,7 @@ Reinforcement Learning으로 CarRacing을 진행합니다
     - main.py
 - result(동영상이 안보이면 클릭해주세요!)
 
-<img src = "https://github.com/shiney5213/RL_CarRacing/assets/54365104/8c7b9498-c932-476d-8fcb-ad622206b692" >
-
+![train](https://github.com/shiney5213/RL_CarRacing/assets/54365104/0a7cffe9-993d-411e-97be-74e28e43020b
 
 ---
 
